@@ -8,20 +8,11 @@
 
 #import "LightingPaletteComponent.h"
 
-#define COLOR_WHEEL_CIRCLE
-
 @implementation LightingPaletteComponent
-
 @synthesize colorWheelImage;
 @synthesize colorTempImage;
 @synthesize colorBrightnessImage;
 @synthesize colorIndicatorImage;
-@synthesize fullScreenWidth;
-@synthesize fullScreenHeight;
-@synthesize appScreenWidth;
-@synthesize appScreenHeight;
-@synthesize frameLength;
-@synthesize frameReserved;
 @synthesize currentColor;
 @synthesize colorConvert;
 @synthesize bitmapContext;
@@ -43,13 +34,6 @@
     colorWheelImage = [[UIImage alloc]init];
     colorTempImage = [[UIImage alloc]init];
     colorBrightnessImage = [[UIImage alloc]init];
-    fullScreenWidth = [[UIScreen mainScreen] bounds].size.width;
-    fullScreenHeight = [[UIScreen mainScreen] bounds].size.height;
-    appScreenWidth = [[UIScreen mainScreen] applicationFrame].size.width;
-    appScreenHeight = [[UIScreen mainScreen] applicationFrame].size.height;
-    frameReserved = (fullScreenHeight - appScreenHeight);
-    frameLength = (fullScreenWidth - frameReserved);
-
     return self;
 }
 
@@ -169,26 +153,11 @@
     return context;
 }
 
-/**
- *  NAME
- *      isValidPointAtX:(float)x atY:(float)y
- *
- *  DESCRIPTION
- *      This function only action when color wheel is circle.
- *
- */
--(BOOL)isValidPointAtX:(float)x atY:(float)y
+-(void)getColorWheelBitmapDataByRadius:(CGFloat)radius atX:(CGFloat)x atY:(CGFloat)y
 {
-    CGFloat radius = frameLength / 2;
     CGFloat pointX = x - radius;
     CGFloat pointY = radius - y;
     CGFloat r_distance = sqrtf(pow(pointX, 2) + pow(pointY, 2));
-    
-#ifdef COLOR_WHEEL_CIRCLE
-    if (fabsf(r_distance) > radius) {
-        return FALSE;
-    }
-#endif
     
     r_distance = fmin(r_distance, radius);
     CGFloat angle = atan2(pointY, pointX);
@@ -198,8 +167,6 @@
     CGFloat perc_angle = angle / (2.0 * M_PI);
     
     currentColor = [colorConvert HSVToRGBByHue:perc_angle Saturation:r_distance / radius Value:1.0];
-    
-    return TRUE;
 }
 
 /**
@@ -212,7 +179,7 @@
  */
 -(void)setRGBAToBitmapData:(BitmapPixel)pixel atPointX:(long)pointX atPointY:(long)pointY
 {
-    size_t length = frameLength;
+    size_t length = CGBitmapContextGetWidth(bitmapContext);
     unsigned char *argbData = &bitmapData[((pointY * length) + pointX) * 4];
     
     argbData[1] = round(pixel.red   * 255.0); // red
@@ -229,13 +196,15 @@
  *      Set color pixel to bitmap data at color wheel image view
  *
  */
--(void)genBitmapDataToColorWheel
+-(void)genBitmapDataToColorWheelWithFrame:(CGRect)imageFrame
 {
-    for (CGFloat x = 0; x < frameLength; ++x) {
-        for (CGFloat y = 0; y < frameLength; ++y) {
-            if ([self isValidPointAtX:x atY:y]) {
-                [self setRGBAToBitmapData:currentColor atPointX:x atPointY:y];
-            }
+    CGFloat imageWidth = imageFrame.size.width;
+    CGFloat imageHeight = imageFrame.size.height;
+
+    for (CGFloat x = 0; x < imageWidth; ++x) {
+        for (CGFloat y = 0; y < imageHeight; ++y) {
+            [self getColorWheelBitmapDataByRadius:(imageWidth / 2.0) atX:x atY:y];
+            [self setRGBAToBitmapData:currentColor atPointX:x atPointY:y];
         }
     }
     currentColor = [colorConvert makeRGBADataByRed:1.0 Green:1.0 Blue:1.0 Alpha:1.0];
@@ -249,11 +218,11 @@
  *      Create a image view for color wheel.
  *
  */
--(UIImage *)createColorWheelImage
+-(UIImage *)createColorWheelImageWithFrame:(CGRect)imageFrame
 {
-    bitmapContext = [self newARGBBitmapContextWithSize:CGSizeMake(frameLength, frameLength)];
+    bitmapContext = [self newARGBBitmapContextWithSize:CGSizeMake(imageFrame.size.width, imageFrame.size.height)];
     bitmapData = CGBitmapContextGetData(bitmapContext);
-    [self genBitmapDataToColorWheel];
+    [self genBitmapDataToColorWheelWithFrame:imageFrame];
 
     CGImageRelease(bitmapImagRef);
     bitmapImagRef = CGBitmapContextCreateImage(bitmapContext);
@@ -289,7 +258,7 @@
  *      Create a image view for color temperature.
  *
  */
--(UIImage *)createColorTempImage
+-(UIImage *)createColorTempImageWithFrame:(CGRect)imageFrame
 {
     [self makeColorTempArray];
 
@@ -306,14 +275,18 @@
         locations[i] = ((float) i) / colorCount;
     }
         
-    CGSize imageSize = {frameLength, frameReserved * 2};
+    CGSize imageSize = {imageFrame.size.width, imageFrame.size.height};
 
     CGGradientRef gradient = CGGradientCreateWithColorComponents(colorTemp, components, locations, colorCount);
     CGColorSpaceRelease(colorTemp);
 
     UIGraphicsBeginImageContext(imageSize);
     CGContextRef colorTempContext = UIGraphicsGetCurrentContext();
-    CGContextDrawLinearGradient(colorTempContext, gradient, CGPointMake(0, 0), CGPointMake(frameLength, 0), 0);
+    CGContextDrawLinearGradient(colorTempContext,
+                                gradient,
+                                CGPointMake(0, 0),
+                                CGPointMake(imageFrame.size.width, 0),
+                                0);
     CGContextSaveGState(colorTempContext);
     
     colorTempImage = UIGraphicsGetImageFromCurrentImageContext();
@@ -348,7 +321,7 @@
  *      to show this image.
  *
  */
--(UIImage *)createColorBrightnessImage
+-(UIImage *)createColorBrightnessImageWithFrame:(CGRect)imageFrame
 {
     [self makeColorBrightnessArray];
 
@@ -356,7 +329,7 @@
     CGColorSpaceRef brigtnessColor = CGColorSpaceCreateDeviceRGB();
     CGFloat components[colorCount * 4];
     CGFloat locations[colorCount];
-    CGSize imageSize = {frameLength, frameReserved * 2};
+    CGSize imageSize = {imageFrame.size.width, imageFrame.size.height};
 
     for (int i = 0; i < colorCount; ++i) {
         components[(i * 4)] = colorBrightnessPixel[i].red;
@@ -371,7 +344,11 @@
 
     UIGraphicsBeginImageContext(imageSize);
     CGContextRef brightnessContext = UIGraphicsGetCurrentContext();
-    CGContextDrawLinearGradient(brightnessContext, gradient, CGPointMake(0, 0), CGPointMake(frameLength, 0), 0);
+    CGContextDrawLinearGradient(brightnessContext,
+                                gradient,
+                                CGPointMake(0, 0),
+                                CGPointMake(imageFrame.size.width, 0),
+                                0);
     CGContextSaveGState(brightnessContext);
     
     colorBrightnessImage = UIGraphicsGetImageFromCurrentImageContext();
@@ -389,10 +366,11 @@
  *      to let user know what kind color is they picked.
  *
  */
--(UIImage *)createColorIndicateImage
+-(UIImage *)createColorIndicateImageWithFrame:(CGRect)imageFrame
 {
     CGColorSpaceRef indicatorColor = CGColorSpaceCreateDeviceRGB();
 
+    CGPoint startPoint = CGPointMake(imageFrame.size.width / 2, imageFrame.size.height / 2);
     CGFloat components[] = {0.0, 0.0, 0.0, 1.0,
                             currentColor.red, currentColor.green, currentColor.blue, 1.0,
                             currentColor.red, currentColor.green, currentColor.blue, 1.0};
@@ -400,14 +378,20 @@
     CGFloat locations[] = {0.0, 0.2, 1.0};
     CGFloat colorCount = 3;
     
-    CGSize imageSize = {frameReserved, frameReserved};
+    CGSize imageSize = {imageFrame.size.width, imageFrame.size.height};
     
     CGGradientRef gradient = CGGradientCreateWithColorComponents(indicatorColor, components, locations, colorCount);
     CGColorSpaceRelease(indicatorColor);
     
     UIGraphicsBeginImageContext(imageSize);
     CGContextRef indicatorContext = UIGraphicsGetCurrentContext();
-    CGContextDrawRadialGradient(indicatorContext, gradient, CGPointMake(frameReserved / 2, frameReserved / 2), (frameReserved / 2), CGPointMake(frameReserved / 2, frameReserved / 2), 0, 0);
+    CGContextDrawRadialGradient(indicatorContext,
+                                gradient,
+                                startPoint,
+                                (imageFrame.size.width / 2),
+                                startPoint,
+                                0,
+                                0);
     CGContextSaveGState(indicatorContext);
     
     colorIndicatorImage = UIGraphicsGetImageFromCurrentImageContext();

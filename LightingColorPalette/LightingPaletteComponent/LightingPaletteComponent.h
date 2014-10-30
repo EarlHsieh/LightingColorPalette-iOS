@@ -24,12 +24,6 @@
     UIImage *colorTempImage;
     UIImage *colorBrightnessImage;
     UIImage *colorIndicatorImage;
-    CGFloat fullScreenWidth;
-    CGFloat fullScreenHeight;
-    CGFloat appScreenWidth;
-    CGFloat appScreenHeight;
-    CGFloat frameReserved;
-    CGFloat frameLength;
     CGImageRef bitmapImagRef;
     unsigned char *bitmapData;
     CGContextRef bitmapContext;
@@ -47,18 +41,6 @@
 
 @property (strong, nonatomic) UIImage *colorIndicatorImage;
 
-@property (nonatomic) CGFloat fullScreenWidth;
-
-@property (nonatomic) CGFloat fullScreenHeight;
-
-@property (nonatomic) CGFloat appScreenWidth;
-
-@property (nonatomic) CGFloat appScreenHeight;
-
-@property (nonatomic) CGFloat frameReserved;
-
-@property (nonatomic) CGFloat frameLength;
-
 @property (nonatomic) ColorConvertFormula *colorConvert;
 
 @property (nonatomic) BitmapPixel currentColor;
@@ -69,21 +51,19 @@
 
 @property (nonatomic) CGContextRef bitmapContext;
 
--(UIImage *)createColorWheelImage;
+-(UIImage *)createColorWheelImageWithFrame:(CGRect)imageFrame;
 
--(UIImage *)createColorTempImage;
+-(UIImage *)createColorTempImageWithFrame:(CGRect)imageFrame;
 
--(UIImage *)createColorBrightnessImage;
+-(UIImage *)createColorBrightnessImageWithFrame:(CGRect)imageFrame;
 
-//- (CAShapeLayer *)produceCircleShapeLayer;
-
--(BOOL)isValidPointAtX:(float)x atY:(float)y;
+-(void)getColorWheelBitmapDataByRadius:(CGFloat)radius atX:(CGFloat)x atY:(CGFloat)y;
 
 -(void)setRGBDataByUserOnImage:(UIImage *)image atX:(float)pointX atY:(float)pointY;
 
 -(void)setColorTempByUser:(int)colorTemp;
 
--(UIImage *)createColorIndicateImage;
+-(UIImage *)createColorIndicateImageWithFrame:(CGRect)imageFrame;
 
 @end
 

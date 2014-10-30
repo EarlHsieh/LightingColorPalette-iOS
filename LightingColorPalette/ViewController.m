@@ -28,6 +28,8 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     colorPalette = [[LightingPaletteComponent alloc] init];
+    colorBrightnessSlider = [[UISlider alloc] init];
+    colorTempSlider = [[UISlider alloc] init];
     [self createColorWheelView];
     [self createColorTempImage];
     [self createColorBrightnessImage];
@@ -49,15 +51,21 @@
  */
 -(void)createColorWheelView
 {
-    float startPointX = colorPalette.frameReserved / 2;
-    float startPointY = colorPalette.frameReserved * 2;
-    float viewWidth = colorPalette.frameLength;
-    float centerPointX = startPointX + (viewWidth / 2);
-    float centerPointY = startPointY + (viewWidth / 2);
-    
-    colorWheelView = (id)[[UIImageView alloc]initWithImage:[colorPalette createColorWheelImage]];
-    colorWheelView.frame = CGRectMake(startPointX, startPointY, viewWidth, viewWidth);
+    CGFloat notificationBarHeight = [[UIScreen mainScreen] bounds].size.height -
+                                    [[UIScreen mainScreen] applicationFrame].size.height;
 
+    CGFloat startPointX = notificationBarHeight / 4.0;
+    CGFloat startPointY = notificationBarHeight * 2.0;
+    CGFloat viewWidth = [[UIScreen mainScreen] bounds].size.width - (notificationBarHeight / 2.0);
+    CGFloat centerPointX = startPointX + (viewWidth / 2.0);
+    CGFloat centerPointY = startPointY + (viewWidth / 2.0);
+    CGRect imageFrame = CGRectMake(startPointX, startPointY, viewWidth, viewWidth);
+
+    colorWheelView = [[UIImageView alloc]initWithImage:[colorPalette createColorWheelImageWithFrame:imageFrame]];
+    colorWheelView.frame = imageFrame;
+    colorWheelView.layer.masksToBounds = YES;
+    colorWheelView.layer.cornerRadius = viewWidth / 2.0;
+    
     [self.view addSubview:colorWheelView];
     [self createColorIndicateImageAtX:centerPointX atY:centerPointY];
 }
@@ -72,15 +80,20 @@
  */
 -(void)createColorTempImage
 {
-    CGFloat startPointX = colorWheelView.frame.origin.x;
-    CGFloat startPointY = colorWheelView.frame.origin.y + colorWheelView.frame.size.height +
-                         colorPalette.frameReserved;
-    CGFloat viewWidth = colorWheelView.frame.size.width;
-    CGFloat viewHeight = colorPalette.frameReserved * 1.5;
+    CGFloat notificationBarHeight = [[UIScreen mainScreen] bounds].size.height -
+                                    [[UIScreen mainScreen] applicationFrame].size.height;
 
-    colorTempView = [[UIImageView alloc]initWithImage:[colorPalette createColorTempImage]];
-    colorTempView.frame = CGRectMake(startPointX, startPointY, viewWidth, viewHeight);
+    CGFloat startPointX = colorWheelView.frame.origin.x;
+    CGFloat startPointY = colorWheelView.frame.origin.y +
+                          colorWheelView.frame.size.height +
+                          notificationBarHeight;
+    CGFloat viewWidth = colorWheelView.frame.size.width;
+    CGFloat viewHeight = colorTempSlider.frame.size.height;
+    CGRect imageFrame = CGRectMake(startPointX, startPointY, viewWidth, viewHeight);
     
+    colorTempView = [[UIImageView alloc]initWithImage:[colorPalette createColorTempImageWithFrame:imageFrame]];
+    colorTempView.frame = imageFrame;
+
     [self.view addSubview:colorTempView];
 }
 
@@ -94,15 +107,19 @@
  */
 -(void)createColorBrightnessImage
 {
-    float startPointX = colorTempView.frame.origin.x;
-    float startPointY = colorTempView.frame.origin.y + colorTempView.frame.size.height +
-                         colorPalette.frameReserved;
-    float viewWidth = colorTempView.frame.size.width;
-    CGFloat viewHeight = colorPalette.frameReserved * 1.5;
+    CGFloat notificationBarHeight = [[UIScreen mainScreen] bounds].size.height -
+                                    [[UIScreen mainScreen] applicationFrame].size.height;
 
-    colorBrightnessView = [[UIImageView alloc]initWithImage:[colorPalette createColorBrightnessImage]];
-    colorBrightnessView.frame = CGRectMake(startPointX, startPointY, viewWidth, viewHeight);
+    CGFloat startPointX = colorTempView.frame.origin.x;
+    CGFloat startPointY = colorTempView.frame.origin.y +
+                        colorTempView.frame.size.height +
+                        notificationBarHeight;
+    CGFloat viewWidth = colorTempView.frame.size.width;
+    CGFloat viewHeight = colorBrightnessSlider.frame.size.height;
+    CGRect imageFrame = CGRectMake(startPointX, startPointY, viewWidth, viewHeight);
 
+    colorBrightnessView = [[UIImageView alloc]initWithImage:[colorPalette createColorBrightnessImageWithFrame:imageFrame]];
+    colorBrightnessView.frame = imageFrame;
 
     [self.view addSubview:colorBrightnessView];
     [self.view addSubview:colorBrightnessSlider];
@@ -118,12 +135,15 @@
  */
 -(void)createColorIndicateImageAtX:(float)centerPointX atY:(float)centerPointY
 {
-    float startPointX = centerPointX - (colorPalette.frameReserved / 2);
-    float startPointY = centerPointY - (colorPalette.frameReserved / 2);
-    float viewWidth = colorPalette.frameReserved;
+    CGFloat notificationBarHeight = [[UIScreen mainScreen] bounds].size.height -
+                                    [[UIScreen mainScreen] applicationFrame].size.height;
+    CGFloat startPointX = centerPointX - (notificationBarHeight / 2);
+    CGFloat startPointY = centerPointY - (notificationBarHeight / 2);
+    CGFloat viewWidth = notificationBarHeight;
+    CGRect imageFrame = CGRectMake(startPointX, startPointY, viewWidth, viewWidth);
 
-    colorIndicatorView = [[UIImageView alloc]initWithImage:[colorPalette createColorIndicateImage]];
-    colorIndicatorView.frame = CGRectMake(startPointX, startPointY, viewWidth, viewWidth);
+    colorIndicatorView = [[UIImageView alloc]initWithImage:[colorPalette createColorIndicateImageWithFrame:imageFrame]];
+    colorIndicatorView.frame = imageFrame;
     
     [self.view addSubview:colorIndicatorView];
 }
@@ -138,9 +158,11 @@
  */
 -(void)createOtherComponent
 {
+    CGFloat notificationBarHeight = [[UIScreen mainScreen] bounds].size.height -
+                                    [[UIScreen mainScreen] applicationFrame].size.height;
     UIImage *clearTrack = [[UIImage alloc] init];
 
-    colorTempSlider = [[UISlider alloc] initWithFrame:colorTempView.frame];
+    colorTempSlider.frame = colorTempView.frame;
     colorTempSlider.minimumValue = 27;
     colorTempSlider.maximumValue = 65;
     colorTempSlider.value = 27;
@@ -149,7 +171,7 @@
     [colorTempSlider addTarget:self action:@selector(sliderValueChange:) forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:colorTempSlider];
 
-    colorBrightnessSlider = [[UISlider alloc] initWithFrame:colorBrightnessView.frame];
+    colorBrightnessSlider.frame = colorBrightnessView.frame;
     colorBrightnessSlider.minimumValue = 0.0;
     colorBrightnessSlider.maximumValue = 100.0;
     colorBrightnessSlider.value = 100.0;
@@ -158,14 +180,15 @@
     [colorBrightnessSlider addTarget:self action:@selector(sliderValueChange:) forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:colorBrightnessSlider];
  
+    powerStateSwitch = [[UISwitch alloc] init];
     CGFloat powerSwitchX = (colorBrightnessView.frame.origin.x +
                             (colorBrightnessView.frame.size.width / 2) -
                             (powerStateSwitch.frame.size.width / 2));
     CGFloat powerSwitchY = (colorBrightnessView.frame.origin.y +
                             colorBrightnessView.frame.size.height +
-                            colorPalette.frameReserved);
-    powerStateSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(powerSwitchX, powerSwitchY, 0,0 )];
-    [powerStateSwitch setOn:false];
+                            notificationBarHeight);
+    powerStateSwitch.frame = CGRectMake(powerSwitchX, powerSwitchY, 0, 0);
+    [powerStateSwitch setOn:true];
     [powerStateSwitch addTarget:self action:@selector(powerStateChange:) forControlEvents:UIControlEventValueChanged];
     [self.view addSubview:powerStateSwitch];
 }
@@ -226,6 +249,28 @@
     [self createColorIndicateImageAtX:x atY:y];
 }
 
+
+/**
+ *  NAME
+ *      isValidPointAtX:(float)x atY:(float)y
+ *
+ *  DESCRIPTION
+ *      This function only action when color wheel is circle.
+ *
+ */
+-(BOOL)isValidPointByRadius:(CGFloat)radius atX:(CGFloat)x atY:(CGFloat)y
+{
+    CGFloat pointX = x - radius;
+    CGFloat pointY = radius - y;
+    CGFloat r_distance = sqrtf(pow(pointX, 2) + pow(pointY, 2));
+
+    if (fabsf(r_distance) > radius) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /**
  *  NAME
  *      updateViewWithTouchEventInTouch:(UITouch *)userTouch
@@ -246,8 +291,10 @@
         (y < (colorWheelView.frame.origin.y + colorWheelView.frame.size.height))) {
         CGFloat imageViewX = [userTouch locationInView:colorWheelView].x;
         CGFloat imageViewY = [userTouch locationInView:colorWheelView].y;
+        CGFloat radius = colorBrightnessView.frame.size.width / 2.0;
 
-        if ([colorPalette isValidPointAtX:imageViewX atY:imageViewY]) {
+        if ([self isValidPointByRadius:radius atX:imageViewX atY:imageViewY]) {
+            [colorPalette getColorWheelBitmapDataByRadius:radius atX:imageViewX atY:imageViewY];
             [self updateIndicatorViewAtX:x atY:y];
             [self updateBrightnessView];
         }
