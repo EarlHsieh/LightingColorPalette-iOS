@@ -20,6 +20,7 @@
     UISlider *colorTempSlider;
     UISlider *colorBrightnessSlider;
     UISwitch *powerStateSwitch;
+    BOOL isColorWheelTouched;
 }
 
 @property (strong, nonatomic)LightingPaletteComponent *colorPalette;

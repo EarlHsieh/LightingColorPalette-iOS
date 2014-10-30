@@ -34,6 +34,7 @@
     [self createColorTempImage];
     [self createColorBrightnessImage];
     [self createOtherComponent];
+    isColorWheelTouched = false;
 }
 
 - (void)didReceiveMemoryWarning {
@@ -281,23 +282,37 @@
  */
 -(void)updateViewWithTouchEventInTouch:(UITouch *)userTouch
 {
-   
-    CGFloat x = [userTouch locationInView:self.view].x;
-    CGFloat y = [userTouch locationInView:self.view].y;
+    CGPoint touchPoint = [userTouch locationInView:self.view];
+    CGPoint wheelCenterPoint = CGPointMake(colorWheelView.frame.origin.x +
+                                           (colorWheelView.frame.size.width / 2),
+                                           colorWheelView.frame.origin.y +
+                                           (colorWheelView.frame.size.height / 2));
+    
+    CGFloat touchDistance = sqrt(pow((touchPoint.x - wheelCenterPoint.x), 2) +
+                                 pow((touchPoint.y - wheelCenterPoint.y), 2));
+    CGFloat radius = colorWheelView.frame.size.width / 2;
 
-    if ((x >= colorWheelView.frame.origin.x) &&
-        (x < (colorWheelView.frame.origin.x + colorWheelView.frame.size.width)) &&
-        (y >= colorWheelView.frame.origin.y) &&
-        (y < (colorWheelView.frame.origin.y + colorWheelView.frame.size.height))) {
-        CGFloat imageViewX = [userTouch locationInView:colorWheelView].x;
-        CGFloat imageViewY = [userTouch locationInView:colorWheelView].y;
-        CGFloat radius = colorBrightnessView.frame.size.width / 2.0;
+    if (isColorWheelTouched == TRUE) {
+        if (touchDistance > radius) {
 
-        if ([self isValidPointByRadius:radius atX:imageViewX atY:imageViewY]) {
-            [colorPalette getColorWheelBitmapDataByRadius:radius atX:imageViewX atY:imageViewY];
-            [self updateIndicatorViewAtX:x atY:y];
+            CGFloat n = radius / (touchDistance - radius);
+            CGFloat distanceX = (wheelCenterPoint.x + (touchPoint.x * n)) / (1 + n);
+            CGFloat distanceY = (wheelCenterPoint.y + (touchPoint.y * n)) / (1 + n);
+        
+            [colorPalette getColorWheelBitmapDataByRadius:radius
+                                                      atX:distanceX
+                                                      atY:distanceY];
+            [self updateIndicatorViewAtX:distanceX atY:distanceY];
             [self updateBrightnessView];
+            return;
         }
+    
+        CGPoint point = [userTouch locationInView:colorWheelView];
+        [colorPalette getColorWheelBitmapDataByRadius:radius
+                                              atX:point.x
+                                              atY:point.y];
+        [self updateIndicatorViewAtX:touchPoint.x atY:touchPoint.y];
+        [self updateBrightnessView];
     }
 }
 
@@ -312,7 +327,26 @@
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
     UITouch *touch = [touches anyObject];
-    [self updateViewWithTouchEventInTouch:touch];
+
+    CGPoint touchPoint = [touch locationInView:self.view];
+    if (touchPoint.x > colorWheelView.frame.origin.x &&
+        touchPoint.x <= (colorWheelView.frame.origin.x + colorWheelView.frame.size.width) &&
+        touchPoint.y > colorWheelView.frame.origin.y &&
+        touchPoint.y <= (colorWheelView.frame.origin.y + colorWheelView.frame.size.height)) {
+        CGPoint colorWheelPoint = [touch locationInView:colorWheelView];
+        CGFloat radius = colorWheelView.frame.size.width / 2;
+
+        if ([self isValidPointByRadius:radius
+                                   atX:colorWheelPoint.x
+                                   atY:colorWheelPoint.y]) {
+            [colorPalette getColorWheelBitmapDataByRadius:radius
+                                                      atX:colorWheelPoint.x
+                                                      atY:colorWheelPoint.y];
+            [self updateIndicatorViewAtX:touchPoint.x atY:touchPoint.y];
+            [self updateBrightnessView];
+            isColorWheelTouched = true  ;
+        }
+    }
 }
 
 /**
@@ -341,6 +375,7 @@
 {
     UITouch *touch = [touches anyObject];
     [self updateViewWithTouchEventInTouch:touch];
+    isColorWheelTouched = false;
 }
 
 /**
